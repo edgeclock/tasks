@@ -89,6 +89,28 @@
           { "key": "done", "label": "Done", "color": "#10b981", "statuses": [ { "key": "approved", "label": "Approved" }, { "key": "posted", "label": "Posted" }, { "key": "reviewed", "label": "Reviewed" } ] },
           { "key": "closed", "label": "Closed", "color": "#6b7280", "statuses": [ { "key": "complete", "label": "Complete" } ] }
         ]
+      },
+      {
+        "id": "goals",
+        "name": "Goals",
+        "color": "#8b5cf6",
+        "statusGroups": [
+          { "key": "notstarted", "label": "Not Started", "color": "#94a3b8", "statuses": [ { "key": "todo", "label": "To Do" } ] },
+          { "key": "active", "label": "Active", "color": "#f59e0b", "statuses": [ { "key": "inprogress", "label": "In Progress" }, { "key": "forapproval", "label": "For Approval" }, { "key": "forrevision", "label": "For Revision" } ] },
+          { "key": "done", "label": "Done", "color": "#10b981", "statuses": [ { "key": "approved", "label": "Approved" }, { "key": "posted", "label": "Posted" }, { "key": "reviewed", "label": "Reviewed" } ] },
+          { "key": "closed", "label": "Closed", "color": "#6b7280", "statuses": [ { "key": "complete", "label": "Complete" } ] }
+        ]
+      },
+      {
+        "id": "ideas",
+        "name": "Ideas & Someday",
+        "color": "#14b8a6",
+        "statusGroups": [
+          { "key": "notstarted", "label": "Not Started", "color": "#94a3b8", "statuses": [ { "key": "todo", "label": "To Do" } ] },
+          { "key": "active", "label": "Active", "color": "#f59e0b", "statuses": [ { "key": "inprogress", "label": "In Progress" }, { "key": "forapproval", "label": "For Approval" }, { "key": "forrevision", "label": "For Revision" } ] },
+          { "key": "done", "label": "Done", "color": "#10b981", "statuses": [ { "key": "approved", "label": "Approved" }, { "key": "posted", "label": "Posted" }, { "key": "reviewed", "label": "Reviewed" } ] },
+          { "key": "closed", "label": "Closed", "color": "#6b7280", "statuses": [ { "key": "complete", "label": "Complete" } ] }
+        ]
       }
     ],
     "priorities": [
@@ -240,6 +262,162 @@
       "priority": "imp-urgent",
       "createdAt": "2026-08-17T11:15:00+08:00",
       "updatedAt": "2026-08-17T11:15:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0012",
+      "listId": "goals",
+      "name": "[edge] Goal: AI Intro Webinar (Edge Possible Trainings launch)",
+      "description": "Launch point for EPT. Date poll Aug 20/21/22 closes Mon noon; target 200 reg / 100 live. Next action: pick final date after poll closes.",
+      "startDate": "2026-08-14",
+      "dueDate": "2026-08-22",
+      "status": "inprogress",
+      "priority": "imp-urgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0013",
+      "listId": "goals",
+      "name": "[edge] Goal: Setup the Website (Edge Possible Trainings)",
+      "description": "Next action: decide platform + domain. Feeds hub, webinar LP, coaching pages.",
+      "startDate": "2026-08-14",
+      "dueDate": null,
+      "status": "todo",
+      "priority": "imp-noturgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0014",
+      "listId": "goals",
+      "name": "[monica] Goal: Landing page - Free AI Intro Webinar",
+      "description": "Next action: lock date + platform, draft hero copy (Quill) and form fields. Feeds GHL hub + LP build (T-0002).",
+      "startDate": "2026-08-14",
+      "dueDate": "2026-08-18",
+      "status": "todo",
+      "priority": "imp-urgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0015",
+      "listId": "goals",
+      "name": "[edge] Goal: Landing page - MMI",
+      "description": "Next action: clarify what the MMI page is for (tickets, affiliate, or recap offer).",
+      "startDate": "2026-08-14",
+      "dueDate": "2026-08-18",
+      "status": "todo",
+      "priority": "imp-urgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0016",
+      "listId": "goals",
+      "name": "[edge] Goal: Landing page - AI Coaching (1-on-1)",
+      "description": "Next action: define the offer (price, sessions, outcomes).",
+      "startDate": "2026-08-14",
+      "dueDate": null,
+      "status": "todo",
+      "priority": "imp-noturgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0017",
+      "listId": "goals",
+      "name": "[vay] Goal: Business Setup and Coaching (Hadji/JHB)",
+      "description": "Next action: Vay create systeme.io account + register domain/email. Edge/Hadji: lock niche + ACR terms (see T-0004). Build Aug 14-20, launch Aug 21.",
+      "startDate": "2026-08-14",
+      "dueDate": "2026-08-21",
+      "status": "inprogress",
+      "priority": "imp-urgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0018",
+      "listId": "goals",
+      "name": "[edge] Goal: Virtual Mastermind (Edge x Jenny)",
+      "description": "Active. Next action: after the Jen call (Aug 16 19:00), lock format, group size, cadence, first 3 topics, pilot plan.",
+      "startDate": "2026-08-16",
+      "dueDate": "2026-08-22",
+      "status": "inprogress",
+      "priority": "imp-noturgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0019",
+      "listId": "goals",
+      "name": "[monica] Goal: Virtual Mastermind for MMI People",
+      "description": "Online mastermind for MMI people in/out Davao; Edge announced in GC. Next action: Monica + Edge set the date (next week).",
+      "startDate": "2026-08-16",
+      "dueDate": "2026-08-24",
+      "status": "todo",
+      "priority": "imp-noturgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0020",
+      "listId": "goals",
+      "name": "[edge] Goal: Agent System Restructure (Plan-Execute-Review pipeline)",
+      "description": "Next action: Edge confirm triage threshold + Codex lane after cut (Aug 18); then Monica builds the agent-routing-pipeline skill.",
+      "startDate": "2026-08-16",
+      "dueDate": "2026-08-22",
+      "status": "inprogress",
+      "priority": "imp-noturgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0021",
+      "listId": "goals",
+      "name": "[edge] Goal: Pickleball Drills (twice a week)",
+      "description": "Next action: pick the two weekly drill slots and set up the first session.",
+      "startDate": "2026-08-14",
+      "dueDate": null,
+      "status": "todo",
+      "priority": "notimp-noturgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0022",
+      "listId": "ideas",
+      "name": "[edge] Idea: Pipeline test topics (ANGIe, SIZY, gpt-oss)",
+      "description": "3 test topics (webinar/ANGIe, website/SIZY, ACR/gpt-oss) mentioned for pipeline testing. Pending landing as plan files.",
+      "startDate": null,
+      "dueDate": null,
+      "status": "todo",
+      "priority": "notimp-noturgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
+      "completedAt": null
+    },
+    {
+      "id": "T-0023",
+      "listId": "ideas",
+      "name": "[geila] Keep: Approved subscriptions reference",
+      "description": "Subs GO: CapCut, Canva, ChatGPT Plus (PHP 999, due Aug 19), Claude Pro, Google One. Codex cut stays Aug 18. Reference only.",
+      "startDate": null,
+      "dueDate": null,
+      "status": "todo",
+      "priority": "notimp-noturgent",
+      "createdAt": "2026-08-17T13:50:00+08:00",
+      "updatedAt": "2026-08-17T13:50:00+08:00",
       "completedAt": null
     }
   ]
