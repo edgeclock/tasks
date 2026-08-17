@@ -216,13 +216,13 @@
       "id": "T-0008",
       "listId": "secretariat",
       "name": "[monica] HR email follow-up (VCPH quitclaim)",
-      "description": "Follow-up sent Aug 16 (thread 19ff9b7510b66727). Cron hr-email-reply-check Tue 09:30. If no reply, escalate together.",
+      "description": "Follow-up sent Aug 16 (thread 19ff9b7510b66727). Cron hr-email-reply-check Tue 09:30. If no reply, escalate together. CHECKED Aug 17 14:10: no HR reply yet (Aug 13 request + Aug 16 follow-up unanswered; final pay P 12,373.01 + BIR 2307 outstanding since Jul 29, HR last bumped thread Aug 12). Escalation ready - needs Edge GO to send.",
       "startDate": "2026-08-17",
       "dueDate": "2026-08-18",
-      "status": "inprogress",
+      "status": "forapproval",
       "priority": "imp-noturgent",
       "createdAt": "2026-08-17T11:15:00+08:00",
-      "updatedAt": "2026-08-17T11:15:00+08:00",
+      "updatedAt": "2026-08-17T14:09:31+08:00",
       "completedAt": null
     },
     {
