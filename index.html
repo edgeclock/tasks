@@ -213,24 +213,27 @@
   .cal-day.today { border-color: var(--accent); }
   .cal-day .day-num { font-weight: 600; font-size: 12px; margin-bottom: 3px; }
   .cal-day-items {
-    display: flex; flex-direction: column; gap: 3px;
+    display: flex; flex-direction: column; gap: 4px;
     overflow-y: auto; flex: 1; min-height: 0;
   }
   .cal-day-items::-webkit-scrollbar { width: 3px; }
   .cal-day-items::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
   .cal-item {
-    border-radius: 4px; padding: 3px 5px; font-size: 10px;
-    color: var(--text); cursor: pointer; white-space: nowrap; overflow: hidden;
-    display: flex; align-items: center; gap: 4px; background: var(--bg3);
+    border-radius: 5px; padding: 4px 6px; font-size: 10px;
+    color: var(--text); cursor: pointer; overflow: hidden;
+    display: flex; flex-direction: column; gap: 2px; background: var(--bg3);
     border: 1px solid var(--border); transition: border-color 0.12s;
   }
   .cal-item:hover { border-color: var(--accent); }
   .cal-item.done-card { opacity: 0.55; }
   .cal-item.done-card .cal-item-name { text-decoration: line-through; }
-  .cal-item span.dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
-  .cal-item .cal-item-name { overflow: hidden; text-overflow: ellipsis; flex: 1; }
-  .cal-item .cal-item-prio { font-size: 8px; color: var(--muted); flex-shrink: 0; }
-  .cal-item .cal-item-overdue { color: #fff; background: var(--danger); border-radius: 50%; width: 11px; height: 11px; font-size: 8px; line-height: 11px; text-align: center; flex-shrink: 0; }
+  .cal-item-head { display: flex; justify-content: space-between; gap: 4px; align-items: center; }
+  .cal-item-status { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--accent); }
+  .cal-item-list { font-size: 8px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cal-item-name { font-size: 10px; line-height: 1.25; word-break: break-word; white-space: normal; overflow-wrap: anywhere; }
+  .cal-item-foot { display: flex; justify-content: space-between; gap: 4px; align-items: center; }
+  .cal-item-prio { font-size: 8px; color: var(--muted); }
+  .cal-item-overdue { font-size: 8px; font-weight: 700; color: #fff; background: var(--danger); border-radius: 3px; padding: 0 4px; flex-shrink: 0; }
 
   /* ---------- Modal ---------- */
   .modal-overlay {
@@ -839,15 +842,21 @@ function renderCalendar() {
     let itemHtml = "";
     for (const it of items) {
       const p = prioByKey(it.t.priority);
+      const list = listById(it.t.listId);
       const ov = isOverdue(it.t);
       const doneCls = isCompleted(it.t) ? "done-card" : "";
-      const marker = it.kind === "due" ? "▣" : (it.kind === "start" ? "▷" : (it.start ? "▷" : (it.end ? "▣" : "·")));
+      const statusLabel = statusKeyToLabel(list, it.t.status);
       itemHtml += `
         <div class="cal-item ${doneCls}" data-id="${it.t.id}" title="${esc(it.t.name)}" style="border-left: 3px solid ${p.color}">
-          <span class="dot" style="background:${p.color}"></span>
-          <span class="cal-item-name">${esc(it.t.name)}</span>
-          <span class="cal-item-prio">${esc(p.label)}</span>
-          ${ov ? `<span class="cal-item-overdue">!</span>` : ""}
+          <div class="cal-item-head">
+            <span class="cal-item-status">${esc(statusLabel)}</span>
+            <span class="cal-item-list">${esc(list.name)}</span>
+          </div>
+          <div class="cal-item-name">${esc(it.t.name)}</div>
+          <div class="cal-item-foot">
+            <span class="cal-item-prio">${esc(p.label)}</span>
+            ${ov ? `<span class="cal-item-overdue">overdue</span>` : ""}
+          </div>
         </div>`;
     }
 
