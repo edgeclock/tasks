@@ -121,12 +121,11 @@ function launchAgent(task, agentId, tagInfo, reply) {
   child.unref();
   log(`LAUNCH runId=${runId} agent=${agentId} task=${task.id} session=${sessionKey} reply=${reply}`);
 
-  // 2. Deliver the launch notice to the requested channels.
+  // 2. Deliver the launch notice. Telegram is the supported CLI channel.
+  //    "webchat" is NOT a CLI-deliverable channel: the launched session is
+  //    visible in the Control UI dashboard instead, so we only notify Telegram.
   if (reply === "telegram" || reply === "both") {
-    sendMessage("telegram", "5652347837", `▶ Started task ${task.id} "${task.name}" -> agent ${agentId} (session ${sessionKey})`);
-  }
-  if (reply === "webchat" || reply === "both") {
-    sendMessage("webchat", null, `▶ Started task ${task.id} "${task.name}" -> agent ${agentId} (session ${sessionKey})`);
+    sendMessage("telegram", "5652347837", `[Done] Started task ${task.id} "${task.name}" -> agent ${agentId} (session ${sessionKey})`);
   }
   return { runId, sessionKey, agentId };
 }
@@ -136,10 +135,14 @@ function sendMessage(channel, target, text) {
   const args = ["message", "send", "--channel", channel, "-m", text];
   if (target) args.push("--target", target);
   const child = process.platform === "win32"
-    ? spawn(process.execPath, [entry, ...args], { detached: true, stdio: "ignore", windowsHide: true })
-    : spawn(entry, args, { detached: true, stdio: "ignore", windowsHide: true });
-  child.unref();
-  log(`SEND channel=${channel} target=${target || "(default)"} msg="${text}"`);
+    ? spawn(process.execPath, [entry, ...args], { windowsHide: true })
+    : spawn(entry, args, { windowsHide: true });
+  let err = "";
+  child.stderr.on("data", c => { err += c; });
+  child.on("close", code => {
+    if (code !== 0) log(`SEND FAILED channel=${channel} target=${target || "(default)"} exit=${code} err=${err.slice(0, 300)}`);
+    else log(`SEND OK channel=${channel} target=${target || "(default)"}`);
+  });
 }
 
 function json(res, code, obj) {

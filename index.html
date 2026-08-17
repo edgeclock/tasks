@@ -440,6 +440,21 @@ function assigneeBadge(t) {
   return `<span class="badge assignee" title="${a.isHuman ? "Human owner" : "Agent"}">${esc(a.label)}</span>`;
 }
 
+async function reloadData() {
+  try {
+    const res = await fetch("tasks.json", { cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
+      const next = normalize(data);
+      if (JSON.stringify(next) !== JSON.stringify(state)) {
+        state = next;
+        renderAll();
+        toast("Board refreshed (agent updates)");
+      }
+    }
+  } catch (e) { /* keep current state */ }
+}
+
 async function checkBridge() {
   try {
     const r = await fetch(BRIDGE_URL + "/health", { cache: "no-store" });
@@ -470,6 +485,9 @@ async function triggerTask(id) {
     const data = await r.json();
     if (r.ok && data.ok) {
       toast(`Launched ${target.label} on ${t.name}`);
+      // Auto-refresh so agent status updates show up without a manual reload
+      setTimeout(async () => { await reloadData(); }, 20000);
+      setTimeout(async () => { await reloadData(); }, 60000);
     } else {
       toast("Launch failed: " + (data.error || "unknown"));
       if (btn) { btn.disabled = false; btn.textContent = "▶ Start"; }
