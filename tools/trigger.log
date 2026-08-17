@@ -1,7 +1,0 @@
-[2026-08-17T06:05:42.903Z] Done Trigger Bridge listening on http://127.0.0.1:8788
-[2026-08-17T06:05:42.905Z] Agents: main, finna, podrick, bibo, quill, simmy, janus, diane, neuro, vay, js, etch, geila
-[2026-08-17T06:07:02.210Z] ERROR spawn EINVAL
-[2026-08-17T06:07:22.397Z] Done Trigger Bridge listening on http://127.0.0.1:8788
-[2026-08-17T06:07:22.398Z] Agents: main, finna, podrick, bibo, quill, simmy, janus, diane, neuro, vay, js, etch, geila
-[2026-08-17T06:07:29.189Z] LAUNCH runId=done-T-0008-1786946849182 agent=main task=T-0008 session=agent:main:done-T-0008 reply=telegram
-[2026-08-17T06:07:29.195Z] SEND channel=telegram target=5652347837 msg="▶ Started task T-0008 "[monica] HR email follow-up (VCPH quitclaim)" -> agent main (session agent:main:done-T-0008)"

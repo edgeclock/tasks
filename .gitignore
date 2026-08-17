@@ -1,0 +1,4 @@
+﻿# Done app - local runtime files
+tools/trigger.log
+_shot*.png
+*.png.bak
