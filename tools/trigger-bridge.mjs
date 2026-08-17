@@ -49,12 +49,14 @@ function log(entry) {
   console.log(line);
 }
 
-function parseAgentTag(name) {
-  const m = /^\[([a-z0-9-]+)\]/i.exec(String(name || "").trim());
-  if (!m) return { tag: null, agentId: "main", note: "no [tag] in name, routed to Monica" };
-  const tag = m[1].toLowerCase();
+function parseAgentTag(task) {
+  // assignee field wins; fall back to legacy [tag] prefix in name
+  const assignee = (task.assignee || "").trim().toLowerCase();
+  const m = /^\[([a-z0-9-]+)\]/i.exec(String(task.name || "").trim());
+  const tag = assignee || (m ? m[1].toLowerCase() : "");
   const agentId = AGENT_MAP[tag];
-  if (!agentId) return { tag, agentId: "main", note: `unknown tag [${tag}], routed to Monica` };
+  if (!tag) return { tag: null, agentId: "main", note: "no assignee, routed to Monica" };
+  if (!agentId) return { tag, agentId: "main", note: `unknown assignee [${tag}], routed to Monica` };
   if (tag === "edge") return { tag, agentId: "main", note: "[edge] is a human task, routed to Monica to coordinate" };
   return { tag, agentId, note: null };
 }
@@ -69,7 +71,7 @@ function buildContext(task, agentId, tagInfo) {
   if (task.dueDate) lines.push(`Due: ${task.dueDate}`);
   lines.push(`Description: ${task.description || "(none)"}`);
   lines.push(``);
-  lines.push(`Assignment: this task is assigned to ${agentId} (from [${tagInfo.tag || "?"}] tag).${tagInfo.note ? " Note: " + tagInfo.note + "." : ""}`);
+  lines.push(`Assignment: this task is assigned to ${agentId} (assignee: ${tagInfo.tag || "unassigned"}).${tagInfo.note ? " Note: " + tagInfo.note + "." : ""}`);
   lines.push(`Do the work now. When finished:`);
   lines.push(`1. Update this task in ${TASKS_REPO}\\tasks.json:`);
   lines.push(`   - status to the right next status (e.g. done/approved/posted/reviewed, or active/forapproval if blocked)`);
@@ -190,7 +192,7 @@ const server = http.createServer((req, res) => {
           json(res, 400, { ok: false, error: "task.id and task.name required" });
           return;
         }
-        const tagInfo = parseAgentTag(task.name);
+        const tagInfo = parseAgentTag(task);
         const agentId = payload.agentId || tagInfo.agentId;
         const reply = ["telegram", "webchat", "both"].includes(payload.reply) ? payload.reply : "both";
         const result = launchAgent(task, agentId, tagInfo, reply);

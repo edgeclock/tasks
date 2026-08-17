@@ -176,6 +176,8 @@
   .card .card-name { font-size: 13px; line-height: 1.35; margin-bottom: 8px; word-break: break-word; }
   .card .card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
   .badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; color: #fff; letter-spacing: 0.3px; }
+  .badge.assignee { background: #334155; }
+  .badge.unassigned { background: rgba(255,255,255,0.15); color: var(--muted); font-weight: 400; }
   .badge.prio { }
   .badge.due { background: rgba(255,255,255,0.12); color: var(--muted); font-weight: 400; }
   .badge.due.overdue { background: var(--danger); color: #fff; font-weight: 600; }
@@ -229,6 +231,7 @@
   .cal-item.done-card .cal-item-name { text-decoration: line-through; }
   .cal-item-head { display: flex; justify-content: space-between; gap: 4px; align-items: center; }
   .cal-item-status { font-size: 8px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.4px; color: var(--accent); }
+  .cal-item-assignee { font-size: 8px; font-weight: 700; color: #cbd5e1; background: #334155; border-radius: 3px; padding: 0 4px; }
   .cal-item-list { font-size: 8px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .cal-item-name { font-size: 10px; line-height: 1.25; word-break: break-word; white-space: normal; overflow-wrap: anywhere; }
   .cal-item-foot { display: flex; justify-content: space-between; gap: 4px; align-items: center; }
@@ -310,6 +313,7 @@
       <thead>
         <tr>
           <th data-sort="name">Name</th>
+          <th data-sort="assignee">Assignee</th>
           <th data-sort="priority">Priority</th>
           <th data-sort="status">Status</th>
           <th data-sort="startDate">Start</th>
@@ -403,14 +407,23 @@ function todayStr() {
 /* ================= Trigger bridge ================= */
 let bridgeOnline = false;
 const BRIDGE_URL = "http://127.0.0.1:8788";
-const AGENT_NAMES = { main: "Monica", finna: "Finna", podrick: "Podrick", bibo: "BIBO", quill: "Quill", simmy: "Simmy", janus: "Janus", diane: "Diane", neuro: "Neuro", vay: "Vay", js: "JS", etch: "Etch", geila: "Geila" };
+const AGENT_NAMES = { main: "Monica", edge: "Edge", finna: "Finna", podrick: "Podrick", bibo: "BIBO", quill: "Quill", simmy: "Simmy", janus: "Janus", diane: "Diane", neuro: "Neuro", vay: "Vay", js: "JS", etch: "Etch", geila: "Geila" };
 
-function agentTagOf(t) {
+function assigneeOf(t) {
+  // assignee field wins; fall back to legacy [tag] prefix in name
+  const a = (t.assignee || "").trim().toLowerCase();
   const m = /^\[([a-z0-9-]+)\]/i.exec((t.name || "").trim());
-  const tag = m ? m[1].toLowerCase() : null;
-  const agentId = tag && AGENT_NAMES[tag] ? (tag === "edge" ? "main" : tag) : "main";
-  const agentLabel = tag === "edge" ? "Monica (edge-owned)" : (AGENT_NAMES[agentId] || "Monica");
-  return { tag, agentId, agentLabel };
+  const tag = a || (m ? m[1].toLowerCase() : "");
+  const isHuman = tag === "edge";
+  const agentId = tag && AGENT_NAMES[tag] ? (isHuman ? "main" : tag) : "main";
+  const label = tag ? (AGENT_NAMES[tag] || AGENT_NAMES[agentId] || "Monica") : "Unassigned";
+  return { tag, agentId, label, isHuman };
+}
+
+function assigneeBadge(t) {
+  const a = assigneeOf(t);
+  if (!a.tag) return `<span class="badge unassigned">Unassigned</span>`;
+  return `<span class="badge assignee" title="${a.isHuman ? "Human owner" : "Agent"}">${esc(a.label)}</span>`;
 }
 
 async function checkBridge() {
@@ -431,7 +444,7 @@ async function checkBridge() {
 async function triggerTask(id) {
   const t = state.tasks.find(x => x.id === id);
   if (!t) return;
-  const target = agentTagOf(t);
+  const target = assigneeOf(t);
   const btn = document.querySelector(`[data-go="${id}"]`);
   if (btn) { btn.disabled = true; btn.textContent = "Launching..."; }
   try {
@@ -442,7 +455,7 @@ async function triggerTask(id) {
     });
     const data = await r.json();
     if (r.ok && data.ok) {
-      toast(`Launched ${target.agentLabel} on ${t.name}`);
+      toast(`Launched ${target.label} on ${t.name}`);
     } else {
       toast("Launch failed: " + (data.error || "unknown"));
       if (btn) { btn.disabled = false; btn.textContent = "▶ Start"; }
@@ -697,14 +710,15 @@ function cardHtml(t) {
   const ov = isOverdue(t);
   const due = t.dueDate ? `<span class="badge due ${ov ? "overdue" : ""}">${ov ? "!" : ""}${fmtDate(t.dueDate)}</span>` : "";
   const doneCls = isCompleted(t) ? "done-card" : "";
-  const target = agentTagOf(t);
+  const target = assigneeOf(t);
   return `
     <div class="card ${doneCls}" draggable="true" data-id="${t.id}">
       <div class="card-name">${esc(t.name)}</div>
       <div class="card-meta">
+        ${assigneeBadge(t)}
         <span class="badge prio" style="background:${p.color}">${esc(p.label)}</span>
         ${due}
-        <button class="btn small go" data-go="${t.id}" title="Start now: launch ${target.agentLabel} with this task" ${bridgeOnline ? "" : "disabled"}>▶ Start</button>
+        <button class="btn small go" data-go="${t.id}" title="Start now: launch ${target.label} with this task" ${bridgeOnline ? "" : "disabled"}>▶ Start</button>
       </div>
     </div>`;
 }
@@ -733,6 +747,7 @@ function renderList() {
     let va, vb;
     if (key === "priority") { va = prioOrder[a.priority] ?? 99; vb = prioOrder[b.priority] ?? 99; }
     else if (key === "status") { va = statusKeyToLabel(listById(a.listId), a.status); vb = statusKeyToLabel(listById(b.listId), b.status); }
+    else if (key === "assignee") { va = (a.assignee || "").toLowerCase() || "zzz"; vb = (b.assignee || "").toLowerCase() || "zzz"; }
     else { va = a[key] || ""; vb = b[key] || ""; }
     if (va < vb) return -1 * dir;
     if (va > vb) return 1 * dir;
@@ -744,15 +759,17 @@ function renderList() {
     const p = prioByKey(t.priority);
     const list = listById(t.listId);
     const ov = isOverdue(t);
-    const target = agentTagOf(t);
+    const target = assigneeOf(t);
     const statusOptions = statusGroups(list).map(g =>
       g.statuses.map(s => `<option value="${s.key}" ${s.key === t.status ? "selected" : ""}>${esc(s.label)}</option>`).join("")
     ).join("");
     const prioOptions = state.config.priorities.map(p =>
       `<option value="${p.key}" ${p.key === t.priority ? "selected" : ""}>${esc(p.label)}</option>`).join("");
+
     return `
       <tr data-id="${t.id}" data-open="${t.id}" style="cursor:pointer">
         <td><span class="task-name">${esc(t.name)}</span></td>
+        <td>${assigneeBadge(t)}</td>
         <td>
           <select class="prio-select" data-field="priority" data-id="${t.id}"
             style="border-left: 3px solid ${p.color}">${prioOptions}</select>
@@ -763,7 +780,7 @@ function renderList() {
         </td>
         <td>${t.startDate ? fmtDate(t.startDate) : ""}</td>
         <td class="${ov ? "row-overdue" : ""}">${t.dueDate ? fmtDate(t.dueDate) + (ov ? " (overdue)" : "") : ""}</td>
-        <td><button class="btn small go" data-go="${t.id}" title="Start now: launch ${target.agentLabel} with this task" ${bridgeOnline ? "" : "disabled"}>▶ Start</button></td>
+        <td><button class="btn small go" data-go="${t.id}" title="Start now: launch ${target.label} with this task" ${bridgeOnline ? "" : "disabled"}>▶ Start</button></td>
       </tr>`;
   }).join("");
 
@@ -846,10 +863,12 @@ function renderCalendar() {
       const ov = isOverdue(it.t);
       const doneCls = isCompleted(it.t) ? "done-card" : "";
       const statusLabel = statusKeyToLabel(list, it.t.status);
+      const a = assigneeOf(it.t);
       itemHtml += `
         <div class="cal-item ${doneCls}" data-id="${it.t.id}" title="${esc(it.t.name)}" style="border-left: 3px solid ${p.color}">
           <div class="cal-item-head">
             <span class="cal-item-status">${esc(statusLabel)}</span>
+            <span class="cal-item-assignee">${esc(a.label)}</span>
             <span class="cal-item-list">${esc(list.name)}</span>
           </div>
           <div class="cal-item-name">${esc(it.t.name)}</div>
@@ -901,6 +920,9 @@ function openModal(taskId, prefill) {
   const statusOptions = statusGroups(stList).map(g =>
     g.statuses.map(s => `<option value="${s.key}" ${(t ? t.status : "") === s.key ? "selected" : ""}>${esc(g.label)} / ${esc(s.label)}</option>`).join("")
   ).join("");
+  const assigneeOptions = Object.entries(AGENT_NAMES).map(([key, label]) =>
+    `<option value="${key}" ${(t ? (t.assignee || "") : "") === key ? "selected" : ""}>${esc(label)}${key === "edge" ? " (you)" : ""}</option>`).join("") +
+    `<option value="" ${(t ? (t.assignee || "") : "") === "" ? "selected" : ""}>Unassigned</option>`;
 
   root.innerHTML = `
     <div class="modal-overlay">
@@ -920,6 +942,10 @@ function openModal(taskId, prefill) {
             <select id="f-list">${listOptions}</select>
           </div>
           <div class="form-row">
+            <label>Assignee</label>
+            <select id="f-assignee">${assigneeOptions}</select>
+          </div>
+          <div class="form-row">
             <label>Status</label>
             <select id="f-status">${statusOptions}</select>
           </div>
@@ -936,7 +962,7 @@ function openModal(taskId, prefill) {
             <input type="date" id="f-due" value="${t ? (t.dueDate || "") : ""}">
           </div>
         </div>
-        <div class="hint">Tip: prefix name with [agent-id] to assign, e.g. [finna] Reconcile RCBC.</div>
+        <div class="hint">Assignee picks the person/agent responsible. You can still filter by list in the sidebar.</div>
         ${t ? `<div class="meta-line">Created: ${fmtDateTime(t.createdAt)} | Updated: ${fmtDateTime(t.updatedAt)} | Completed: ${t.completedAt ? fmtDateTime(t.completedAt) : "Not yet"}</div>` : ""}
         <div class="modal-actions">
           ${t ? `<button class="btn danger" id="f-delete">Delete</button><button class="btn go" id="f-go" title="Start now: launch the task's agent">▶ Start now</button>` : `<span class="spacer"></span>`}
@@ -983,6 +1009,7 @@ function openModal(taskId, prefill) {
     const name = document.getElementById("f-name").value.trim();
     if (!name) { toast("Name is required"); return; }
     const listId = document.getElementById("f-list").value;
+    const assignee = document.getElementById("f-assignee").value;
     const status = document.getElementById("f-status").value;
     const priority = document.getElementById("f-prio").value;
     const startDate = document.getElementById("f-start").value || null;
@@ -993,7 +1020,7 @@ function openModal(taskId, prefill) {
 
     const now = new Date().toISOString();
     if (t) {
-      t.name = name; t.description = desc; t.listId = listId; t.status = status;
+      t.name = name; t.description = desc; t.listId = listId; t.assignee = assignee || ""; t.status = status;
       t.priority = priority; t.startDate = startDate; t.dueDate = dueDate;
       t.updatedAt = now;
       if (isCompleted(t) && !t.completedAt) t.completedAt = now;
@@ -1001,7 +1028,7 @@ function openModal(taskId, prefill) {
       toast("Task updated");
     } else {
       state.tasks.push({
-        id: nextId(), listId, name, description: desc, status, priority,
+        id: nextId(), listId, name, description: desc, assignee: assignee || "", status, priority,
         startDate, dueDate, createdAt: now, updatedAt: now, completedAt: null
       });
       toast("Task added: " + name);

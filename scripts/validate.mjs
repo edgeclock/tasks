@@ -53,6 +53,8 @@ for (const [i, t] of (data.tasks || []).entries()) {
     if (!/^T-\d{4,}$/.test(t.id)) warn.push(`${where}: id "${t.id}" does not match T-#### pattern`);
   }
   if (!t.name || !String(t.name).trim()) errors.push(`${where}: missing name`);
+  if (t.assignee !== undefined && typeof t.assignee !== "string") errors.push(`${where}: assignee must be a string`);
+  if (/^\[[a-z0-9-]+\]/.test(String(t.name || ""))) warn.push(`${where}: name still starts with an [agent] tag - move it to assignee`);
   if (!listIds.has(t.listId)) errors.push(`${where}: listId "${t.listId}" not in config.lists`);
   else if (!statusKeysByList[t.listId]?.has(t.status)) {
     errors.push(`${where}: status "${t.status}" not defined in list "${t.listId}" statusGroups`);
