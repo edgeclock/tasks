@@ -1036,6 +1036,20 @@
       "updatedAt": "2026-08-17T14:05:00+08:00",
       "completedAt": null,
       "assignee": "edge"
+    },
+    {
+      "id": "T-0025",
+      "listId": "marketing",
+      "name": "Landing page newsletter popup: 10% off coupon",
+      "description": "Idea from Edge (2026-08-17). When a visitor lands on a course-selling page (AI training tiers, webinar/course funnels), show a popup offering a 10% off coupon in exchange for newsletter signup. Lead-magnet pattern: email signup -> popup shows coupon code. Stack: GoHighLevel (systeme.io retired Aug 15), so GHL popup/forms + coupon capability. Open questions: GHL popup form setup, coupon + checkout integration, which newsletter list, which course first.",
+      "startDate": null,
+      "dueDate": null,
+      "status": "todo",
+      "priority": "notimp-noturgent",
+      "createdAt": "2026-08-17T23:35:00+08:00",
+      "updatedAt": "2026-08-17T23:35:00+08:00",
+      "completedAt": null,
+      "assignee": "edge"
     }
   ]
 }
