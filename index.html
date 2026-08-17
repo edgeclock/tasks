@@ -114,6 +114,19 @@
   .btn:hover { border-color: var(--accent); }
   .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
   .btn.small { padding: 3px 9px; font-size: 12px; }
+  .btn.go {
+    background: rgba(79,140,255,0.15); border-color: rgba(79,140,255,0.5);
+    color: var(--accent); font-weight: 600;
+  }
+  .btn.go:hover { background: var(--accent); color: #fff; }
+  .btn.go:disabled { opacity: 0.5; cursor: not-allowed; }
+  #bridgeDot {
+    display: inline-block; width: 9px; height: 9px; border-radius: 50%;
+    background: var(--muted); margin-right: 4px; vertical-align: middle;
+  }
+  #bridgeDot.on { background: var(--ok); }
+  #bridgeDot.off { background: var(--danger); }
+  #bridgeStatus { font-size: 12px; color: var(--muted); margin-right: 8px; }
   .btn.danger { color: var(--danger); }
   select, input[type="text"], input[type="date"], textarea {
     background: var(--bg); color: var(--text);
@@ -259,6 +272,7 @@
     <button class="view-tab" data-view="calendar">Calendar</button>
   </nav>
   <div class="header-right">
+    <span id="bridgeStatus" title="Trigger bridge status"><span id="bridgeDot"></span>Bridge</span>
     <button class="btn" id="importBtn" title="Import tasks.json">Import</button>
     <input type="file" id="importFile" accept=".json" class="hidden">
     <button class="btn" id="exportBtn" title="Download tasks.json">Export</button>
@@ -371,6 +385,60 @@ let listSort = { key: "priority", dir: 1 };
 function todayStr() {
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+/* ================= Trigger bridge ================= */
+let bridgeOnline = false;
+const BRIDGE_URL = "http://127.0.0.1:8788";
+const AGENT_NAMES = { main: "Monica", finna: "Finna", podrick: "Podrick", bibo: "BIBO", quill: "Quill", simmy: "Simmy", janus: "Janus", diane: "Diane", neuro: "Neuro", vay: "Vay", js: "JS", etch: "Etch", geila: "Geila" };
+
+function agentTagOf(t) {
+  const m = /^\[([a-z0-9-]+)\]/i.exec((t.name || "").trim());
+  const tag = m ? m[1].toLowerCase() : null;
+  const agentId = tag && AGENT_NAMES[tag] ? (tag === "edge" ? "main" : tag) : "main";
+  const agentLabel = tag === "edge" ? "Monica (edge-owned)" : (AGENT_NAMES[agentId] || "Monica");
+  return { tag, agentId, agentLabel };
+}
+
+async function checkBridge() {
+  try {
+    const r = await fetch(BRIDGE_URL + "/health", { cache: "no-store" });
+    bridgeOnline = r.ok;
+  } catch (e) {
+    bridgeOnline = false;
+  }
+  const dot = document.getElementById("bridgeDot");
+  if (dot) {
+    dot.className = bridgeOnline ? "on" : "off";
+    dot.parentElement.title = bridgeOnline ? "Trigger bridge online" : "Trigger bridge offline - Start buttons disabled";
+  }
+  renderAll();
+}
+
+async function triggerTask(id) {
+  const t = state.tasks.find(x => x.id === id);
+  if (!t) return;
+  const target = agentTagOf(t);
+  const btn = document.querySelector(`[data-go="${id}"]`);
+  if (btn) { btn.disabled = true; btn.textContent = "Launching..."; }
+  try {
+    const r = await fetch(BRIDGE_URL + "/trigger", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ task: t, agentId: target.agentId, reply: "both" })
+    });
+    const data = await r.json();
+    if (r.ok && data.ok) {
+      toast(`Launched ${target.agentLabel} on ${t.name}`);
+    } else {
+      toast("Launch failed: " + (data.error || "unknown"));
+      if (btn) { btn.disabled = false; btn.textContent = "▶ Start"; }
+    }
+  } catch (e) {
+    toast("Bridge unreachable - is it running?");
+    checkBridge();
+    if (btn) { btn.disabled = false; btn.textContent = "▶ Start"; }
+  }
 }
 
 function fmtDate(iso) {
@@ -592,7 +660,16 @@ function renderKanban() {
       card.classList.add("dragging");
     });
     card.addEventListener("dragend", () => card.classList.remove("dragging"));
-    card.addEventListener("click", () => openModal(card.dataset.id));
+    card.addEventListener("click", e => {
+      if (e.target.closest("[data-go]")) return; // let the Start button handle it
+      openModal(card.dataset.id);
+    });
+  });
+  root.querySelectorAll("[data-go]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      triggerTask(btn.dataset.go);
+    });
   });
 }
 
@@ -607,12 +684,14 @@ function cardHtml(t) {
   const ov = isOverdue(t);
   const due = t.dueDate ? `<span class="badge due ${ov ? "overdue" : ""}">${ov ? "!" : ""}${fmtDate(t.dueDate)}</span>` : "";
   const doneCls = isCompleted(t) ? "done-card" : "";
+  const target = agentTagOf(t);
   return `
     <div class="card ${doneCls}" draggable="true" data-id="${t.id}">
       <div class="card-name">${esc(t.name)}</div>
       <div class="card-meta">
         <span class="badge prio" style="background:${p.color}">${esc(p.label)}</span>
         ${due}
+        <button class="btn small go" data-go="${t.id}" title="Start now: launch ${target.agentLabel} with this task" ${bridgeOnline ? "" : "disabled"}>▶ Start</button>
       </div>
     </div>`;
 }
@@ -652,6 +731,7 @@ function renderList() {
     const p = prioByKey(t.priority);
     const list = listById(t.listId);
     const ov = isOverdue(t);
+    const target = agentTagOf(t);
     const statusOptions = statusGroups(list).map(g =>
       g.statuses.map(s => `<option value="${s.key}" ${s.key === t.status ? "selected" : ""}>${esc(s.label)}</option>`).join("")
     ).join("");
@@ -670,6 +750,7 @@ function renderList() {
         </td>
         <td>${t.startDate ? fmtDate(t.startDate) : ""}</td>
         <td class="${ov ? "row-overdue" : ""}">${t.dueDate ? fmtDate(t.dueDate) + (ov ? " (overdue)" : "") : ""}</td>
+        <td><button class="btn small go" data-go="${t.id}" title="Start now: launch ${target.agentLabel} with this task" ${bridgeOnline ? "" : "disabled"}>▶ Start</button></td>
       </tr>`;
   }).join("");
 
@@ -691,6 +772,12 @@ function renderList() {
   });
   body.querySelectorAll("[data-open]").forEach(el => {
     el.addEventListener("click", () => openModal(el.dataset.open));
+  });
+  body.querySelectorAll("[data-go]").forEach(btn => {
+    btn.addEventListener("click", e => {
+      e.stopPropagation();
+      triggerTask(btn.dataset.go);
+    });
   });
   // stop row-click from firing when interacting with the inline dropdowns
   body.querySelectorAll("select").forEach(sel => {
@@ -833,7 +920,8 @@ function openModal(taskId, prefill) {
         <div class="hint">Tip: prefix name with [agent-id] to assign, e.g. [finna] Reconcile RCBC.</div>
         ${t ? `<div class="meta-line">Created: ${fmtDateTime(t.createdAt)} | Updated: ${fmtDateTime(t.updatedAt)} | Completed: ${t.completedAt ? fmtDateTime(t.completedAt) : "Not yet"}</div>` : ""}
         <div class="modal-actions">
-          ${t ? `<button class="btn danger" id="f-delete">Delete</button><span class="spacer"></span>` : `<span class="spacer"></span>`}
+          ${t ? `<button class="btn danger" id="f-delete">Delete</button><button class="btn go" id="f-go" title="Start now: launch the task's agent">▶ Start now</button>` : `<span class="spacer"></span>`}
+          <span class="spacer"></span>
           <button class="btn" id="f-cancel">Cancel</button>
           <button class="btn primary" id="f-save">${t ? "Save" : "Add"}</button>
         </div>
@@ -861,6 +949,16 @@ function openModal(taskId, prefill) {
       closeModal(); renderAll(); toast("Task deleted");
     }
   });
+
+  const goBtn = document.getElementById("f-go");
+  if (goBtn) {
+    goBtn.disabled = !bridgeOnline;
+    goBtn.addEventListener("click", () => {
+      const name = document.getElementById("f-name").value.trim() || t.name;
+      const taskCopy = { ...t, name };
+      triggerTask(taskCopy.id);
+    });
+  }
 
   document.getElementById("f-save").addEventListener("click", () => {
     const name = document.getElementById("f-name").value.trim();
@@ -991,6 +1089,8 @@ function escAttr(s) { return esc(s).replace(/\n/g, " "); }
 
 /* ================= Boot ================= */
 load();
+checkBridge();
+setInterval(checkBridge, 15000);
 const initialView = location.hash.replace("#", "");
 if (["kanban", "list", "calendar"].includes(initialView)) switchView(initialView);
 </script>
