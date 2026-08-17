@@ -88,6 +88,9 @@
   .list-btn.active { background: var(--bg3); color: var(--text); border-color: var(--accent); }
   .lb-count { font-size: 11px; background: rgba(255,255,255,0.08); border-radius: 999px; padding: 1px 7px; }
   .list-btn.active .lb-count { background: var(--accent); color: #fff; }
+  .legend { padding: 0 8px; display: flex; flex-direction: column; gap: 4px; }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); }
+  .legend-item .swatch { width: 11px; height: 11px; border-radius: 3px; flex-shrink: 0; }
   #mainWrap { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   header {
     display: flex; align-items: center; gap: 16px;
@@ -276,6 +279,17 @@
   <div class="side-brand">Done<span>.</span></div>
   <div class="side-label">LISTS</div>
   <div id="listButtons"></div>
+  <div class="side-label" style="margin-top:18px">STATUS COLORS</div>
+  <div class="legend">
+    <div class="legend-item"><span class="swatch" style="background:#64748b"></span>Not Started</div>
+    <div class="legend-item"><span class="swatch" style="background:#f59e0b"></span>In Progress</div>
+    <div class="legend-item"><span class="swatch" style="background:#f97316"></span>For Approval</div>
+    <div class="legend-item"><span class="swatch" style="background:#ef4444"></span>For Revision</div>
+    <div class="legend-item"><span class="swatch" style="background:#10b981"></span>Approved</div>
+    <div class="legend-item"><span class="swatch" style="background:#14b8a6"></span>Posted</div>
+    <div class="legend-item"><span class="swatch" style="background:#3b82f6"></span>Reviewed</div>
+    <div class="legend-item"><span class="swatch" style="background:#000;border:1px solid #333"></span>Complete</div>
+  </div>
 </aside>
 
 <div id="mainWrap">
@@ -505,6 +519,37 @@ function statusColor(t) {
   }
   return "#94a3b8";
 }
+
+// Per-sub-status card colors: grey/cold for Not Started, warm for Active, cold for Done, black for Complete
+const STATUS_CARD_COLORS = {
+  todo: "#64748b",        // Not Started: grey
+  inprogress: "#f59e0b",  // Active: warm amber
+  forapproval: "#f97316", // Active: warm orange
+  forrevision: "#ef4444", // Active: warm red
+  approved: "#10b981",    // Done: cold emerald
+  posted: "#14b8a6",      // Done: cold teal
+  reviewed: "#3b82f6",    // Done: cold blue
+  complete: "#000000",    // Closed: black
+};
+
+function statusCardColor(t) {
+  const c = STATUS_CARD_COLORS[t.status];
+  if (c) return c;
+  // fallback: derive from group (notstarted grey, active warm, done cold, closed black)
+  const g = groupOfStatus(t);
+  if (g === "active") return "#f59e0b";
+  if (g === "done") return "#10b981";
+  if (g === "closed") return "#000000";
+  return "#64748b";
+}
+
+function hexToRgba(hex, a) {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
 function isCompleted(t) { const g = groupOfStatus(t); return g === "done" || g === "closed"; }
 
 function nextId() {
@@ -711,8 +756,10 @@ function cardHtml(t) {
   const due = t.dueDate ? `<span class="badge due ${ov ? "overdue" : ""}">${ov ? "!" : ""}${fmtDate(t.dueDate)}</span>` : "";
   const doneCls = isCompleted(t) ? "done-card" : "";
   const target = assigneeOf(t);
+  const sc = statusCardColor(t);
+  const cardStyle = `background:${hexToRgba(sc, t.status === "complete" ? 0.85 : 0.16)}; border-left:4px solid ${sc};`;
   return `
-    <div class="card ${doneCls}" draggable="true" data-id="${t.id}">
+    <div class="card ${doneCls}" draggable="true" data-id="${t.id}" style="${cardStyle}">
       <div class="card-name">${esc(t.name)}</div>
       <div class="card-meta">
         ${assigneeBadge(t)}
@@ -767,7 +814,7 @@ function renderList() {
       `<option value="${p.key}" ${p.key === t.priority ? "selected" : ""}>${esc(p.label)}</option>`).join("");
 
     return `
-      <tr data-id="${t.id}" data-open="${t.id}" style="cursor:pointer">
+      <tr data-id="${t.id}" data-open="${t.id}" style="cursor:pointer; background:${hexToRgba(statusCardColor(t), 0.10)}; border-left:4px solid ${statusCardColor(t)};">
         <td><span class="task-name">${esc(t.name)}</span></td>
         <td>${assigneeBadge(t)}</td>
         <td>
@@ -865,7 +912,7 @@ function renderCalendar() {
       const statusLabel = statusKeyToLabel(list, it.t.status);
       const a = assigneeOf(it.t);
       itemHtml += `
-        <div class="cal-item ${doneCls}" data-id="${it.t.id}" title="${esc(it.t.name)}" style="border-left: 3px solid ${p.color}">
+        <div class="cal-item ${doneCls}" data-id="${it.t.id}" title="${esc(it.t.name)}" style="border-left: 4px solid ${statusCardColor(it.t)}; background:${hexToRgba(statusCardColor(it.t), it.t.status === "complete" ? 0.8 : 0.14)};">
           <div class="cal-item-head">
             <span class="cal-item-status">${esc(statusLabel)}</span>
             <span class="cal-item-assignee">${esc(a.label)}</span>
