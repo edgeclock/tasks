@@ -3,7 +3,53 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Done - Task Management</title>
+<title>Done - Task Management | Kanban, List & Calendar</title>
+
+<!-- Primary SEO -->
+<meta name="description" content="Done is a task management tool with Kanban, List, and Calendar views. Track tasks by list, status, and Eisenhower priority across the Edge Possible agent org.">
+<meta name="keywords" content="task management, kanban board, calendar view, task list, productivity, Edge Possible, Done app, project tracker">
+<meta name="author" content="Edge Possible / Monica">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#0f1117">
+<link rel="canonical" href="https://edgeclock.github.io/tasks/">
+
+<!-- Favicon / Icons -->
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="apple-touch-icon" href="favicon.svg">
+
+<!-- Open Graph (Facebook / LinkedIn / Discord) -->
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Done">
+<meta property="og:title" content="Done - Task Management">
+<meta property="og:description" content="Kanban, List, and Calendar views for tracking tasks across the Edge Possible org. Status per list, Eisenhower priorities, dark theme.">
+<meta property="og:url" content="https://edgeclock.github.io/tasks/">
+<meta property="og:image" content="https://edgeclock.github.io/tasks/og-image.jpg">
+<meta property="og:image:width" content="1536">
+<meta property="og:image:height" content="768">
+<meta property="og:image:alt" content="Done task management banner">
+<meta property="og:locale" content="en_PH">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Done - Task Management">
+<meta name="twitter:description" content="Kanban, List, and Calendar views. Status per list, Eisenhower priorities, dark theme.">
+<meta name="twitter:image" content="https://edgeclock.github.io/tasks/og-image.jpg">
+
+<!-- Structured data (JSON-LD) -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Done",
+  "url": "https://edgeclock.github.io/tasks/",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Any",
+  "description": "Task management tool with Kanban, List, and Calendar views for the Edge Possible agent org.",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "PHP" },
+  "author": { "@type": "Organization", "name": "Edge Possible" },
+  "image": "https://edgeclock.github.io/tasks/og-image.jpg"
+}
+</script>
 <style>
   :root {
     --bg: #0f1117;
@@ -378,8 +424,7 @@ function nextId() {
 
 function startOfWeek(d) {
   const out = new Date(d.getFullYear(), d.getMonth(), d.getDate());
-  const day = (out.getDay() + 6) % 7; // Monday = 0
-  out.setDate(out.getDate() - day);
+  out.setDate(out.getDate() - out.getDay()); // Sunday = 0
   return out;
 }
 
@@ -664,7 +709,7 @@ function renderCalendar() {
   document.getElementById("calTitle").textContent =
     calCursor.toLocaleDateString("en-PH", { month: "long", year: "numeric" });
 
-  const dows = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const dows = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   let html = dows.map(d => `<div class="cal-dow">${d}</div>`).join("");
 
   const first = new Date(year, month, 1);
