@@ -22,7 +22,27 @@
     color: var(--text);
     font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
     min-height: 100vh;
+    display: flex;
   }
+  #sidebar {
+    width: 230px; flex-shrink: 0; background: var(--bg2);
+    border-right: 1px solid var(--border);
+    padding: 16px 12px; height: 100vh; position: sticky; top: 0; overflow-y: auto;
+  }
+  .side-brand { font-size: 18px; font-weight: 700; margin-bottom: 18px; padding: 0 8px; }
+  .side-brand span { color: var(--accent); }
+  .side-label { font-size: 11px; color: var(--muted); letter-spacing: 1px; margin: 0 8px 8px; font-weight: 600; }
+  .list-btn {
+    display: flex; align-items: center; justify-content: space-between;
+    width: 100%; background: transparent; border: 1px solid transparent;
+    color: var(--muted); border-radius: 8px; padding: 8px 10px;
+    cursor: pointer; font-size: 13px; margin-bottom: 2px; text-align: left;
+  }
+  .list-btn:hover { background: var(--bg3); color: var(--text); }
+  .list-btn.active { background: var(--bg3); color: var(--text); border-color: var(--accent); }
+  .lb-count { font-size: 11px; background: rgba(255,255,255,0.08); border-radius: 999px; padding: 1px 7px; }
+  .list-btn.active .lb-count { background: var(--accent); color: #fff; }
+  #mainWrap { flex: 1; min-width: 0; display: flex; flex-direction: column; }
   header {
     display: flex; align-items: center; gap: 16px;
     padding: 12px 20px;
@@ -55,10 +75,15 @@
     padding: 8px 10px; font-size: 14px; font-family: inherit;
   }
   select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); }
-  main { padding: 20px; }
+  main { padding: 20px; flex: 1; min-width: 0; }
 
   /* ---------- Kanban ---------- */
   #kanban { display: flex; flex-direction: column; gap: 14px; }
+  .kanban-row {
+    display: flex; gap: 12px; overflow-x: auto; align-items: flex-start;
+    padding: 12px; background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; min-height: 60vh;
+  }
   .kanban-group { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
   .group-header {
     display: flex; align-items: center; gap: 8px;
@@ -106,6 +131,7 @@
   th { color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; }
   th:hover { color: var(--text); }
   tr:hover td { background: rgba(255,255,255,0.02); }
+  #listBody tr { cursor: pointer; }
   td .task-name { cursor: pointer; font-weight: 500; }
   td .task-name:hover { color: var(--accent); }
   .status-select { font-size: 12px; padding: 4px 6px; }
@@ -155,6 +181,7 @@
   .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
   .modal-actions .spacer { flex: 1; }
   .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .meta-line { font-size: 11px; color: var(--muted); margin-top: 8px; }
 
   /* ---------- Toast ---------- */
   #toast {
@@ -170,6 +197,14 @@
 </head>
 <body>
 
+<aside id="sidebar">
+  <div class="side-brand">Done<span>.</span></div>
+  <div class="side-label">LISTS</div>
+  <div id="listButtons"></div>
+</aside>
+
+<div id="mainWrap">
+
 <header>
   <h1>Done<span>.</span></h1>
   <nav class="view-tabs">
@@ -178,9 +213,6 @@
     <button class="view-tab" data-view="calendar">Calendar</button>
   </nav>
   <div class="header-right">
-    <select id="listFilter" title="Filter by list">
-      <option value="">All lists</option>
-    </select>
     <button class="btn" id="importBtn" title="Import tasks.json">Import</button>
     <input type="file" id="importFile" accept=".json" class="hidden">
     <button class="btn" id="exportBtn" title="Download tasks.json">Export</button>
@@ -226,6 +258,8 @@
     </div>
   </div>
 </main>
+
+</div>
 
 <div id="modalRoot" class="hidden"></div>
 <div id="toast"></div>
@@ -282,6 +316,7 @@ function defaultData() {
 
 let state = defaultData();
 let currentView = "kanban";
+let activeList = "all";
 let calCursor = startOfWeek(new Date());
 let listSort = { key: "priority", dir: 1 };
 
@@ -406,9 +441,7 @@ function download(filename, text) {
 /* ================= Rendering ================= */
 
 function renderAll() {
-  document.getElementById("listFilter").innerHTML =
-    '<option value="">All lists</option>' +
-    state.config.lists.map(l => `<option value="${l.id}">${l.name}</option>`).join("");
+  renderSidebar();
 
   document.getElementById("statusGroupFilter").innerHTML =
     '<option value="">All status groups</option>' +
@@ -423,8 +456,28 @@ function renderAll() {
   renderCalendar();
 }
 
+function renderSidebar() {
+  const wrap = document.getElementById("listButtons");
+  const countFor = (listId) => state.tasks.filter(t =>
+    t.listId === listId && groupOfStatus(t) !== "closed" && groupOfStatus(t) !== "done"
+  ).length;
+  const btn = (id, name) => `
+    <button class="list-btn ${activeList === id ? "active" : ""}" data-list="${id}">
+      <span>${esc(name)}</span><span class="lb-count">${id === "all" ? state.tasks.filter(t => groupOfStatus(t) !== "closed" && groupOfStatus(t) !== "done").length : countFor(id)}</span>
+    </button>`;
+  let html = btn("all", "All Lists");
+  for (const l of state.config.lists) html += btn(l.id, l.name);
+  wrap.innerHTML = html;
+  wrap.querySelectorAll(".list-btn").forEach(b => {
+    b.addEventListener("click", () => {
+      activeList = b.dataset.list;
+      renderAll();
+    });
+  });
+}
+
 function filteredTasks() {
-  const listId = document.getElementById("listFilter").value;
+  const listId = activeList === "all" ? "" : activeList;
   const sg = document.getElementById("statusGroupFilter").value;
   const pr = document.getElementById("priorityFilter").value;
   const ov = document.getElementById("overdueFilter").value;
@@ -442,38 +495,39 @@ function filteredTasks() {
 
 function renderKanban() {
   const root = document.getElementById("kanban");
-  const listId = document.getElementById("listFilter").value;
-  const lists = listId ? state.config.lists.filter(l => l.id === listId) : state.config.lists;
+  const lists = activeList === "all" ? state.config.lists : state.config.lists.filter(l => l.id === activeList);
 
-  let html = "";
+  // Build columns from SUB-statuses only (flatten groups), skip closed group
+  const cols = [];
+  const seen = new Set();
   for (const list of lists) {
-    const groups = statusGroups(list);
-    let listHtml = "";
-    for (const group of groups) {
-      let colHtml = "";
+    for (const group of statusGroups(list)) {
+      if (group.key === "closed") continue;
       for (const st of group.statuses) {
-        const tasks = state.tasks.filter(t => t.listId === list.id && t.status === st.key);
-        const cards = tasks.map(cardHtml).join("");
-        colHtml += `
-          <div class="kanban-col">
-            <div class="col-head" style="border-top: 3px solid ${group.color}">
-              <span>${esc(st.label)}</span><span class="count">${tasks.length}</span>
-            </div>
-            <div class="col-body" data-list="${list.id}" data-status="${st.key}">${cards}</div>
-          </div>`;
+        if (seen.has(st.key)) continue;
+        seen.add(st.key);
+        cols.push({ key: st.key, label: st.label, groupKey: group.key, groupColor: group.color });
       }
-      listHtml += `
-        <div class="kanban-group">
-          <div class="group-header" style="background:${group.color}">
-            <span>${esc(group.label)}</span>
-            <span class="count">${countInGroup(list.id, group.key)}</span>
-          </div>
-          <div class="group-cols">${colHtml}</div>
-        </div>`;
     }
-    html += listHtml;
   }
-  root.innerHTML = html || '<div class="list-empty">No lists.</div>';
+
+  let colHtml = "";
+  for (const col of cols) {
+    const tasks = state.tasks.filter(t =>
+      (activeList === "all" || t.listId === activeList) &&
+      groupOfStatus(t) !== "closed" &&
+      t.status === col.key
+    );
+    const cards = tasks.map(cardHtml).join("");
+    colHtml += `
+      <div class="kanban-col">
+        <div class="col-head" style="border-top: 3px solid ${col.groupColor}">
+          <span>${esc(col.label)}</span><span class="count">${tasks.length}</span>
+        </div>
+        <div class="col-body" data-status="${col.key}">${cards}</div>
+      </div>`;
+  }
+  root.innerHTML = `<div class="kanban-row">${colHtml}</div>`;
 
   // attach drag handlers
   root.querySelectorAll(".col-body").forEach(col => {
@@ -484,7 +538,7 @@ function renderKanban() {
       col.classList.remove("dragover");
       const id = e.dataTransfer.getData("text/plain");
       const t = state.tasks.find(x => x.id === id);
-      if (t) moveTask(t, col.dataset.list, col.dataset.status);
+      if (t) moveTask(t, t.listId, col.dataset.status);
     });
   });
   root.querySelectorAll(".card").forEach(card => {
@@ -559,8 +613,8 @@ function renderList() {
     const prioOptions = state.config.priorities.map(p =>
       `<option value="${p.key}" ${p.key === t.priority ? "selected" : ""}>${esc(p.label)}</option>`).join("");
     return `
-      <tr data-id="${t.id}">
-        <td><span class="task-name" data-open="${t.id}">${esc(t.name)}</span></td>
+      <tr data-id="${t.id}" data-open="${t.id}" style="cursor:pointer">
+        <td><span class="task-name">${esc(t.name)}</span></td>
         <td>
           <select class="prio-select" data-field="priority" data-id="${t.id}"
             style="border-left: 3px solid ${p.color}">${prioOptions}</select>
@@ -593,6 +647,11 @@ function renderList() {
   body.querySelectorAll("[data-open]").forEach(el => {
     el.addEventListener("click", () => openModal(el.dataset.open));
   });
+  // stop row-click from firing when interacting with the inline dropdowns
+  body.querySelectorAll("select").forEach(sel => {
+    sel.addEventListener("click", e => e.stopPropagation());
+    sel.addEventListener("change", e => e.stopPropagation());
+  });
 }
 
 /* ---------- Calendar ---------- */
@@ -612,7 +671,7 @@ function renderCalendar() {
   const start = startOfWeek(first);
   const today = todayStr();
 
-  const listId = document.getElementById("listFilter").value;
+  const listId = activeList === "all" ? "" : activeList;
   const tasks = state.tasks.filter(t => !listId || t.listId === listId);
 
   for (let i = 0; i < 42; i++) {
@@ -668,12 +727,18 @@ function renderCalendar() {
   });
 }
 
+function fmtDateTime(iso) {
+  if (!iso) return "-";
+  const d = new Date(iso);
+  return d.toLocaleString("en-PH", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+}
+
 /* ================= Modal ================= */
 
 function openModal(taskId, prefill) {
   const t = taskId ? state.tasks.find(x => x.id === taskId) : null;
   const root = document.getElementById("modalRoot");
-  const defaultListId = document.getElementById("listFilter").value || state.config.lists[0].id;
+  const defaultListId = activeList !== "all" ? activeList : state.config.lists[0].id;
 
   const listOptions = state.config.lists.map(l =>
     `<option value="${l.id}" ${(t ? t.listId : defaultListId) === l.id ? "selected" : ""}>${esc(l.name)}</option>`).join("");
@@ -721,6 +786,7 @@ function openModal(taskId, prefill) {
           </div>
         </div>
         <div class="hint">Tip: prefix name with [agent-id] to assign, e.g. [finna] Reconcile RCBC.</div>
+        ${t ? `<div class="meta-line">Created: ${fmtDateTime(t.createdAt)} | Updated: ${fmtDateTime(t.updatedAt)} | Completed: ${t.completedAt ? fmtDateTime(t.completedAt) : "Not yet"}</div>` : ""}
         <div class="modal-actions">
           ${t ? `<button class="btn danger" id="f-delete">Delete</button><span class="spacer"></span>` : `<span class="spacer"></span>`}
           <button class="btn" id="f-cancel">Cancel</button>
@@ -816,7 +882,6 @@ window.addEventListener("hashchange", () => {
   if (["kanban", "list", "calendar"].includes(v)) switchView(v);
 });
 
-document.getElementById("listFilter").addEventListener("change", renderAll);
 document.getElementById("statusGroupFilter").addEventListener("change", renderList);
 document.getElementById("priorityFilter").addEventListener("change", renderList);
 document.getElementById("overdueFilter").addEventListener("change", renderList);
