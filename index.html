@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Done - Task Management</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --bg2: #161a23;
+    --bg3: #1d232f;
+    --border: #2a3140;
+    --text: #e6e9ef;
+    --muted: #8b93a5;
+    --accent: #4f8cff;
+    --danger: #ef4444;
+    --ok: #10b981;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    min-height: 100vh;
+  }
+  header {
+    display: flex; align-items: center; gap: 16px;
+    padding: 12px 20px;
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; z-index: 50;
+  }
+  header h1 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+  header h1 span { color: var(--accent); }
+  .view-tabs { display: flex; gap: 4px; margin-left: 12px; }
+  .view-tab {
+    background: transparent; color: var(--muted);
+    border: 1px solid transparent; border-radius: 8px;
+    padding: 6px 14px; cursor: pointer; font-size: 14px;
+  }
+  .view-tab.active { background: var(--bg3); color: var(--text); border-color: var(--border); }
+  .header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .btn {
+    background: var(--bg3); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px 14px; cursor: pointer; font-size: 13px;
+  }
+  .btn:hover { border-color: var(--accent); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.small { padding: 3px 9px; font-size: 12px; }
+  .btn.danger { color: var(--danger); }
+  select, input[type="text"], input[type="date"], textarea {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px;
+    padding: 8px 10px; font-size: 14px; font-family: inherit;
+  }
+  select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); }
+  main { padding: 20px; }
+
+  /* ---------- Kanban ---------- */
+  #kanban { display: flex; flex-direction: column; gap: 14px; }
+  .kanban-group { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .group-header {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px; font-weight: 600; font-size: 14px;
+    color: #fff; cursor: pointer; user-select: none;
+  }
+  .group-header .count { opacity: 0.75; font-weight: 400; font-size: 12px; }
+  .group-cols {
+    display: flex; gap: 12px; padding: 12px;
+    overflow-x: auto; align-items: flex-start;
+  }
+  .kanban-col {
+    background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 10px; min-width: 240px; max-width: 280px;
+    flex: 1; display: flex; flex-direction: column;
+  }
+  .col-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 10px; font-size: 13px; font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+  .col-body { padding: 8px; min-height: 80px; display: flex; flex-direction: column; gap: 8px; }
+  .col-body.dragover { outline: 2px dashed var(--accent); outline-offset: -2px; border-radius: 8px; }
+  .card {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 10px 12px; cursor: grab;
+    transition: border-color 0.15s, transform 0.1s;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card.dragging { opacity: 0.5; }
+  .card .card-name { font-size: 13px; line-height: 1.35; margin-bottom: 8px; word-break: break-word; }
+  .card .card-meta { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .badge { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; color: #fff; letter-spacing: 0.3px; }
+  .badge.prio { }
+  .badge.due { background: rgba(255,255,255,0.12); color: var(--muted); font-weight: 400; }
+  .badge.due.overdue { background: var(--danger); color: #fff; font-weight: 600; }
+  .card.done-card { opacity: 0.6; }
+  .card.done-card .card-name { text-decoration: line-through; }
+
+  /* ---------- List ---------- */
+  .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; align-items: center; }
+  .filters label { font-size: 12px; color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; background: var(--bg2); border-radius: 12px; overflow: hidden; }
+  th, td { padding: 10px 12px; text-align: left; font-size: 13px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; cursor: pointer; user-select: none; white-space: nowrap; }
+  th:hover { color: var(--text); }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+  td .task-name { cursor: pointer; font-weight: 500; }
+  td .task-name:hover { color: var(--accent); }
+  .status-select { font-size: 12px; padding: 4px 6px; }
+  .prio-select { font-size: 12px; padding: 4px 6px; }
+  .row-overdue { color: var(--danger); font-weight: 600; }
+  .list-empty { text-align: center; color: var(--muted); padding: 40px; }
+
+  /* ---------- Calendar ---------- */
+  #cal-wrap { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cal-nav h2 { font-size: 16px; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-dow { text-align: center; font-size: 11px; color: var(--muted); padding: 4px 0; font-weight: 600; }
+  .cal-day {
+    min-height: 92px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 8px; padding: 5px; font-size: 11px;
+    display: flex; flex-direction: column; gap: 2px; overflow: hidden;
+  }
+  .cal-day.out { opacity: 0.35; }
+  .cal-day.today { border-color: var(--accent); }
+  .cal-day .day-num { font-weight: 600; font-size: 12px; margin-bottom: 3px; }
+  .cal-item {
+    border-radius: 4px; padding: 1px 5px; font-size: 10px;
+    color: #fff; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .cal-item.due-only { background: rgba(255,255,255,0.14); color: var(--text); }
+  .cal-item.start-only { background: rgba(255,255,255,0.08); color: var(--text); border-left: 3px solid var(--accent); }
+  .cal-item span.dot { width: 5px; height: 5px; border-radius: 50%; flex-shrink: 0; }
+  .cal-day.more { color: var(--muted); font-size: 10px; padding-left: 5px; }
+
+  /* ---------- Modal ---------- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center; z-index: 100;
+  }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+    width: min(520px, 92vw); padding: 20px; max-height: 90vh; overflow-y: auto;
+  }
+  .modal h3 { margin-bottom: 16px; font-size: 17px; }
+  .form-row { margin-bottom: 12px; }
+  .form-row label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .form-row input, .form-row select, .form-row textarea { width: 100%; }
+  .form-row textarea { min-height: 80px; resize: vertical; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+  .modal-actions .spacer { flex: 1; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  /* ---------- Toast ---------- */
+  #toast {
+    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+    background: var(--bg3); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 18px; font-size: 13px; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s; z-index: 200;
+  }
+  #toast.show { opacity: 1; }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Done<span>.</span></h1>
+  <nav class="view-tabs">
+    <button class="view-tab active" data-view="kanban">Kanban</button>
+    <button class="view-tab" data-view="list">List</button>
+    <button class="view-tab" data-view="calendar">Calendar</button>
+  </nav>
+  <div class="header-right">
+    <select id="listFilter" title="Filter by list">
+      <option value="">All lists</option>
+    </select>
+    <button class="btn" id="importBtn" title="Import tasks.json">Import</button>
+    <input type="file" id="importFile" accept=".json" class="hidden">
+    <button class="btn" id="exportBtn" title="Download tasks.json">Export</button>
+    <button class="btn" id="copyBtn" title="Copy tasks.json to clipboard">Copy JSON</button>
+    <button class="btn primary" id="addBtn">+ New task</button>
+  </div>
+</header>
+
+<main>
+  <div id="kanban"></div>
+  <div id="listView" class="hidden">
+    <div class="filters">
+      <select id="statusGroupFilter"><option value="">All status groups</option></select>
+      <select id="priorityFilter"><option value="">All priorities</option></select>
+      <select id="overdueFilter">
+        <option value="">All tasks</option>
+        <option value="overdue">Overdue only</option>
+        <option value="today">Due today</option>
+      </select>
+    </div>
+    <table id="listTable">
+      <thead>
+        <tr>
+          <th data-sort="name">Name</th>
+          <th data-sort="priority">Priority</th>
+          <th data-sort="status">Status</th>
+          <th data-sort="startDate">Start</th>
+          <th data-sort="dueDate">Due</th>
+        </tr>
+      </thead>
+      <tbody id="listBody"></tbody>
+    </table>
+    <div id="listEmpty" class="list-empty hidden">No tasks match.</div>
+  </div>
+  <div id="calView" class="hidden">
+    <div id="cal-wrap">
+      <div class="cal-nav">
+        <button class="btn" id="calPrev">&lt; Prev</button>
+        <h2 id="calTitle"></h2>
+        <button class="btn" id="calNext">Next &gt;</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+</main>
+
+<div id="modalRoot" class="hidden"></div>
+<div id="toast"></div>
+
+<script>
+"use strict";
+
+/* ================= Data ================= */
+
+const DEFAULT_CONFIG = {
+  lists: [
+    { id: "inbox", name: "Inbox", color: "#64748b" },
+    { id: "edgepossible", name: "Edge Possible", color: "#4f8cff" },
+    { id: "finances", name: "Finances", color: "#10b981" },
+    { id: "marketing", name: "Marketing", color: "#f59e0b" },
+    { id: "podcast", name: "Podcast", color: "#a855f7" },
+    { id: "video", name: "Video & Creative", color: "#ec4899" },
+    { id: "secretariat", name: "Secretary & Admin", color: "#06b6d4" },
+    { id: "personal", name: "Personal", color: "#94a3b8" }
+  ],
+  priorities: [
+    { key: "imp-urgent", label: "Important / Urgent", color: "#ef4444", weight: 0 },
+    { key: "notimp-urgent", label: "Not Important / Urgent", color: "#f97316", weight: 1 },
+    { key: "imp-noturgent", label: "Important / Not Urgent", color: "#3b82f6", weight: 2 },
+    { key: "notimp-noturgent", label: "Not Important / Not Urgent", color: "#94a3b8", weight: 3 }
+  ]
+};
+
+const DEFAULT_STATUS_TEMPLATE = [
+  { key: "notstarted", label: "Not Started", color: "#94a3b8",
+    statuses: [ { key: "todo", label: "To Do" } ] },
+  { key: "active", label: "Active", color: "#f59e0b",
+    statuses: [ { key: "inprogress", label: "In Progress" },
+                { key: "forapproval", label: "For Approval" },
+                { key: "forrevision", label: "For Revision" } ] },
+  { key: "done", label: "Done", color: "#10b981",
+    statuses: [ { key: "approved", label: "Approved" },
+                { key: "posted", label: "Posted" },
+                { key: "reviewed", label: "Reviewed" } ] },
+  { key: "closed", label: "Closed", color: "#6b7280",
+    statuses: [ { key: "complete", label: "Complete" } ] }
+];
+
+function clone(x) { return JSON.parse(JSON.stringify(x)); }
+
+function defaultData() {
+  const lists = DEFAULT_CONFIG.lists.map(l => {
+    const out = clone(l);
+    out.statusGroups = clone(DEFAULT_STATUS_TEMPLATE);
+    return out;
+  });
+  return { version: 1, config: { lists: lists, priorities: clone(DEFAULT_CONFIG.priorities) }, tasks: [] };
+}
+
+let state = defaultData();
+let currentView = "kanban";
+let calCursor = startOfWeek(new Date());
+let listSort = { key: "priority", dir: 1 };
+
+/* ================= Helpers ================= */
+
+function todayStr() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+}
+
+function fmtDate(iso) {
+  if (!iso) return "";
+  const d = new Date(iso + "T00:00:00");
+  return d.toLocaleDateString("en-PH", { month: "short", day: "numeric" });
+}
+
+function isOverdue(t) {
+  if (!t.dueDate) return false;
+  const g = groupOfStatus(t);
+  if (g === "done" || g === "closed") return false;
+  return t.dueDate < todayStr();
+}
+
+function listById(id) { return state.config.lists.find(l => l.id === id) || state.config.lists[0]; }
+function prioByKey(k) { return state.config.priorities.find(p => p.key === k) || state.config.priorities[0]; }
+function statusGroups(list) { return (list && list.statusGroups) ? list.statusGroups : DEFAULT_STATUS_TEMPLATE; }
+function statusKeyToLabel(list, key) {
+  for (const g of statusGroups(list)) {
+    const s = g.statuses.find(s => s.key === key);
+    if (s) return s.label;
+  }
+  return key;
+}
+function groupOfStatus(t) {
+  const list = listById(t.listId);
+  for (const g of statusGroups(list)) {
+    if (g.statuses.some(s => s.key === t.status)) return g.key;
+  }
+  return "notstarted";
+}
+function statusColor(t) {
+  const list = listById(t.listId);
+  for (const g of statusGroups(list)) {
+    const s = g.statuses.find(s => s.key === t.status);
+    if (s) return g.color;
+  }
+  return "#94a3b8";
+}
+function isCompleted(t) { const g = groupOfStatus(t); return g === "done" || g === "closed"; }
+
+function nextId() {
+  let max = 0;
+  for (const t of state.tasks) {
+    const m = /^T-(\d+)$/.exec(t.id);
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  }
+  return "T-" + String(max + 1).padStart(4, "0");
+}
+
+function startOfWeek(d) {
+  const out = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const day = (out.getDay() + 6) % 7; // Monday = 0
+  out.setDate(out.getDate() - day);
+  return out;
+}
+
+function toast(msg) {
+  const el = document.getElementById("toast");
+  el.textContent = msg;
+  el.classList.add("show");
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove("show"), 2200);
+}
+
+/* ================= Load / Save ================= */
+
+async function load() {
+  try {
+    const res = await fetch("tasks.json", { cache: "no-store" });
+    if (res.ok) {
+      const data = await res.json();
+      state = normalize(data);
+      toast("Loaded tasks.json");
+    }
+  } catch (e) {
+    toast("Using default data (no tasks.json)");
+  }
+  renderAll();
+}
+
+function normalize(data) {
+  const out = defaultData();
+  if (data && data.config) {
+    if (Array.isArray(data.config.lists)) {
+      out.config.lists = data.config.lists.map(l => {
+        const base = clone(l);
+        if (!base.statusGroups) base.statusGroups = clone(DEFAULT_STATUS_TEMPLATE);
+        return base;
+      });
+    }
+    if (Array.isArray(data.config.priorities)) out.config.priorities = data.config.priorities;
+  }
+  if (data && Array.isArray(data.tasks)) out.tasks = data.tasks;
+  // ensure every task has a valid listId
+  out.tasks.forEach(t => { if (!listById(t.listId)) t.listId = "inbox"; });
+  return out;
+}
+
+function serialize() {
+  return JSON.stringify(state, null, 2);
+}
+
+function download(filename, text) {
+  const blob = new Blob([text], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ================= Rendering ================= */
+
+function renderAll() {
+  document.getElementById("listFilter").innerHTML =
+    '<option value="">All lists</option>' +
+    state.config.lists.map(l => `<option value="${l.id}">${l.name}</option>`).join("");
+
+  document.getElementById("statusGroupFilter").innerHTML =
+    '<option value="">All status groups</option>' +
+    DEFAULT_STATUS_TEMPLATE.map(g => `<option value="${g.key}">${g.label}</option>`).join("");
+
+  document.getElementById("priorityFilter").innerHTML =
+    '<option value="">All priorities</option>' +
+    state.config.priorities.map(p => `<option value="${p.key}">${p.label}</option>`).join("");
+
+  renderKanban();
+  renderList();
+  renderCalendar();
+}
+
+function filteredTasks() {
+  const listId = document.getElementById("listFilter").value;
+  const sg = document.getElementById("statusGroupFilter").value;
+  const pr = document.getElementById("priorityFilter").value;
+  const ov = document.getElementById("overdueFilter").value;
+  return state.tasks.filter(t => {
+    if (listId && t.listId !== listId) return false;
+    if (sg && groupOfStatus(t) !== sg) return false;
+    if (pr && t.priority !== pr) return false;
+    if (ov === "overdue" && !isOverdue(t)) return false;
+    if (ov === "today" && t.dueDate !== todayStr()) return false;
+    return true;
+  });
+}
+
+/* ---------- Kanban ---------- */
+
+function renderKanban() {
+  const root = document.getElementById("kanban");
+  const listId = document.getElementById("listFilter").value;
+  const lists = listId ? state.config.lists.filter(l => l.id === listId) : state.config.lists;
+
+  let html = "";
+  for (const list of lists) {
+    const groups = statusGroups(list);
+    let listHtml = "";
+    for (const group of groups) {
+      let colHtml = "";
+      for (const st of group.statuses) {
+        const tasks = state.tasks.filter(t => t.listId === list.id && t.status === st.key);
+        const cards = tasks.map(cardHtml).join("");
+        colHtml += `
+          <div class="kanban-col">
+            <div class="col-head" style="border-top: 3px solid ${group.color}">
+              <span>${esc(st.label)}</span><span class="count">${tasks.length}</span>
+            </div>
+            <div class="col-body" data-list="${list.id}" data-status="${st.key}">${cards}</div>
+          </div>`;
+      }
+      listHtml += `
+        <div class="kanban-group">
+          <div class="group-header" style="background:${group.color}">
+            <span>${esc(group.label)}</span>
+            <span class="count">${countInGroup(list.id, group.key)}</span>
+          </div>
+          <div class="group-cols">${colHtml}</div>
+        </div>`;
+    }
+    html += listHtml;
+  }
+  root.innerHTML = html || '<div class="list-empty">No lists.</div>';
+
+  // attach drag handlers
+  root.querySelectorAll(".col-body").forEach(col => {
+    col.addEventListener("dragover", e => { e.preventDefault(); col.classList.add("dragover"); });
+    col.addEventListener("dragleave", () => col.classList.remove("dragover"));
+    col.addEventListener("drop", e => {
+      e.preventDefault();
+      col.classList.remove("dragover");
+      const id = e.dataTransfer.getData("text/plain");
+      const t = state.tasks.find(x => x.id === id);
+      if (t) moveTask(t, col.dataset.list, col.dataset.status);
+    });
+  });
+  root.querySelectorAll(".card").forEach(card => {
+    card.addEventListener("dragstart", e => {
+      e.dataTransfer.setData("text/plain", card.dataset.id);
+      card.classList.add("dragging");
+    });
+    card.addEventListener("dragend", () => card.classList.remove("dragging"));
+    card.addEventListener("click", () => openModal(card.dataset.id));
+  });
+}
+
+function countInGroup(listId, groupKey) {
+  const list = listById(listId);
+  const keys = statusGroups(list).find(g => g.key === groupKey).statuses.map(s => s.key);
+  return state.tasks.filter(t => t.listId === listId && keys.includes(t.status)).length;
+}
+
+function cardHtml(t) {
+  const p = prioByKey(t.priority);
+  const ov = isOverdue(t);
+  const due = t.dueDate ? `<span class="badge due ${ov ? "overdue" : ""}">${ov ? "!" : ""}${fmtDate(t.dueDate)}</span>` : "";
+  const doneCls = isCompleted(t) ? "done-card" : "";
+  return `
+    <div class="card ${doneCls}" draggable="true" data-id="${t.id}">
+      <div class="card-name">${esc(t.name)}</div>
+      <div class="card-meta">
+        <span class="badge prio" style="background:${p.color}">${esc(p.label)}</span>
+        ${due}
+      </div>
+    </div>`;
+}
+
+function moveTask(t, listId, status) {
+  const wasCompleted = isCompleted(t);
+  t.listId = listId;
+  t.status = status;
+  t.updatedAt = new Date().toISOString();
+  if (isCompleted(t) && !wasCompleted) t.completedAt = new Date().toISOString();
+  if (!isCompleted(t)) t.completedAt = null;
+  renderAll();
+  toast("Task moved: " + t.name);
+}
+
+/* ---------- List ---------- */
+
+function renderList() {
+  const body = document.getElementById("listBody");
+  let tasks = filteredTasks();
+  const prioOrder = {};
+  state.config.priorities.forEach((p, i) => prioOrder[p.key] = i);
+  const dir = listSort.dir;
+  const key = listSort.key;
+  tasks.sort((a, b) => {
+    let va, vb;
+    if (key === "priority") { va = prioOrder[a.priority] ?? 99; vb = prioOrder[b.priority] ?? 99; }
+    else if (key === "status") { va = statusKeyToLabel(listById(a.listId), a.status); vb = statusKeyToLabel(listById(b.listId), b.status); }
+    else { va = a[key] || ""; vb = b[key] || ""; }
+    if (va < vb) return -1 * dir;
+    if (va > vb) return 1 * dir;
+    return 0;
+  });
+
+  document.getElementById("listEmpty").classList.toggle("hidden", tasks.length > 0);
+  body.innerHTML = tasks.map(t => {
+    const p = prioByKey(t.priority);
+    const list = listById(t.listId);
+    const ov = isOverdue(t);
+    const statusOptions = statusGroups(list).map(g =>
+      g.statuses.map(s => `<option value="${s.key}" ${s.key === t.status ? "selected" : ""}>${esc(s.label)}</option>`).join("")
+    ).join("");
+    const prioOptions = state.config.priorities.map(p =>
+      `<option value="${p.key}" ${p.key === t.priority ? "selected" : ""}>${esc(p.label)}</option>`).join("");
+    return `
+      <tr data-id="${t.id}">
+        <td><span class="task-name" data-open="${t.id}">${esc(t.name)}</span></td>
+        <td>
+          <select class="prio-select" data-field="priority" data-id="${t.id}"
+            style="border-left: 3px solid ${p.color}">${prioOptions}</select>
+        </td>
+        <td>
+          <select class="status-select" data-field="status" data-id="${t.id}"
+            style="border-left: 3px solid ${statusColor(t)}">${statusOptions}</select>
+        </td>
+        <td>${t.startDate ? fmtDate(t.startDate) : ""}</td>
+        <td class="${ov ? "row-overdue" : ""}">${t.dueDate ? fmtDate(t.dueDate) + (ov ? " (overdue)" : "") : ""}</td>
+      </tr>`;
+  }).join("");
+
+  body.querySelectorAll("select[data-field]").forEach(sel => {
+    sel.addEventListener("change", () => {
+      const t = state.tasks.find(x => x.id === sel.dataset.id);
+      if (!t) return;
+      const field = sel.dataset.field;
+      if (field === "status") {
+        moveTask(t, t.listId, sel.value);
+        // re-render list selects after move (status options could change per group)
+        renderList();
+      } else {
+        t.priority = sel.value;
+        t.updatedAt = new Date().toISOString();
+        renderList();
+      }
+    });
+  });
+  body.querySelectorAll("[data-open]").forEach(el => {
+    el.addEventListener("click", () => openModal(el.dataset.open));
+  });
+}
+
+/* ---------- Calendar ---------- */
+
+function renderCalendar() {
+  const grid = document.getElementById("calGrid");
+  const year = calCursor.getFullYear();
+  const month = calCursor.getMonth();
+
+  document.getElementById("calTitle").textContent =
+    calCursor.toLocaleDateString("en-PH", { month: "long", year: "numeric" });
+
+  const dows = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  let html = dows.map(d => `<div class="cal-dow">${d}</div>`).join("");
+
+  const first = new Date(year, month, 1);
+  const start = startOfWeek(first);
+  const today = todayStr();
+
+  const listId = document.getElementById("listFilter").value;
+  const tasks = state.tasks.filter(t => !listId || t.listId === listId);
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
+    const iso = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    const inMonth = d.getMonth() === month;
+    const isToday = iso === today;
+
+    const items = [];
+    for (const t of tasks) {
+      if (t.startDate && t.dueDate && t.startDate <= iso && iso <= t.dueDate) {
+        items.push({ t, kind: "range", start: t.startDate === iso, end: t.dueDate === iso });
+      } else if (t.startDate === iso && !t.dueDate) {
+        items.push({ t, kind: "start" });
+      } else if (t.dueDate === iso && !t.startDate) {
+        items.push({ t, kind: "due" });
+      } else if (t.startDate === iso && t.dueDate === iso) {
+        items.push({ t, kind: "range", start: true, end: true });
+      }
+    }
+
+    const shown = items.slice(0, 3);
+    const more = items.length - shown.length;
+    let itemHtml = "";
+    for (const it of shown) {
+      const p = prioByKey(it.t.priority);
+      const ov = isOverdue(it.t);
+      let cls = "cal-item";
+      if (it.kind === "due") cls += " due-only";
+      if (it.kind === "start") cls += " start-only";
+      const label = (it.t.startDate && it.t.dueDate && it.kind === "range") ? (it.start ? "" : (it.end ? "end: " : "· ")) : "";
+      itemHtml += `<div class="${cls}" data-id="${it.t.id}" title="${esc(it.t.name)}">
+        <span class="dot" style="background:${p.color}"></span>${esc(it.t.name)}${ov ? " !" : ""}</div>`;
+    }
+    if (more > 0) itemHtml += `<div class="more">+${more} more</div>`;
+
+    html += `
+      <div class="cal-day ${inMonth ? "" : "out"} ${isToday ? "today" : ""}" data-iso="${iso}">
+        <div class="day-num">${d.getDate()}</div>
+        ${itemHtml}
+      </div>`;
+  }
+  grid.innerHTML = html;
+
+  grid.querySelectorAll(".cal-item").forEach(el => {
+    el.addEventListener("click", e => { e.stopPropagation(); openModal(el.dataset.id); });
+  });
+  grid.querySelectorAll(".cal-day").forEach(day => {
+    day.addEventListener("dblclick", () => {
+      openModal(null, { startDate: day.dataset.iso });
+    });
+  });
+}
+
+/* ================= Modal ================= */
+
+function openModal(taskId, prefill) {
+  const t = taskId ? state.tasks.find(x => x.id === taskId) : null;
+  const root = document.getElementById("modalRoot");
+  const defaultListId = document.getElementById("listFilter").value || state.config.lists[0].id;
+
+  const listOptions = state.config.lists.map(l =>
+    `<option value="${l.id}" ${(t ? t.listId : defaultListId) === l.id ? "selected" : ""}>${esc(l.name)}</option>`).join("");
+
+  const prioOptions = state.config.priorities.map(p =>
+    `<option value="${p.key}" ${(t ? t.priority : "imp-urgent") === p.key ? "selected" : ""}>${esc(p.label)}</option>`).join("");
+
+  const stList = t ? listById(t.listId) : listById(defaultListId);
+  const statusOptions = statusGroups(stList).map(g =>
+    g.statuses.map(s => `<option value="${s.key}" ${(t ? t.status : "") === s.key ? "selected" : ""}>${esc(g.label)} / ${esc(s.label)}</option>`).join("")
+  ).join("");
+
+  root.innerHTML = `
+    <div class="modal-overlay">
+      <div class="modal">
+        <h3>${t ? "Edit task" : "New task"}</h3>
+        <div class="form-row">
+          <label>Name *</label>
+          <input type="text" id="f-name" maxlength="200" value="${t ? escAttr(t.name) : ""}" placeholder="Task name">
+        </div>
+        <div class="form-row">
+          <label>Description</label>
+          <textarea id="f-desc" placeholder="Optional details">${t ? esc(t.description || "") : ""}</textarea>
+        </div>
+        <div class="form-grid">
+          <div class="form-row">
+            <label>List</label>
+            <select id="f-list">${listOptions}</select>
+          </div>
+          <div class="form-row">
+            <label>Status</label>
+            <select id="f-status">${statusOptions}</select>
+          </div>
+          <div class="form-row">
+            <label>Priority</label>
+            <select id="f-prio">${prioOptions}</select>
+          </div>
+          <div class="form-row">
+            <label>Start date</label>
+            <input type="date" id="f-start" value="${t ? (t.startDate || "") : (prefill && prefill.startDate || "")}">
+          </div>
+          <div class="form-row">
+            <label>Due date</label>
+            <input type="date" id="f-due" value="${t ? (t.dueDate || "") : ""}">
+          </div>
+        </div>
+        <div class="hint">Tip: prefix name with [agent-id] to assign, e.g. [finna] Reconcile RCBC.</div>
+        <div class="modal-actions">
+          ${t ? `<button class="btn danger" id="f-delete">Delete</button><span class="spacer"></span>` : `<span class="spacer"></span>`}
+          <button class="btn" id="f-cancel">Cancel</button>
+          <button class="btn primary" id="f-save">${t ? "Save" : "Add"}</button>
+        </div>
+      </div>
+    </div>`;
+
+  root.classList.remove("hidden");
+
+  // status options refresh when list changes
+  document.getElementById("f-list").addEventListener("change", e => {
+    const list = listById(e.target.value);
+    const cur = document.getElementById("f-status").value;
+    document.getElementById("f-status").innerHTML = statusGroups(list).map(g =>
+      g.statuses.map(s => `<option value="${s.key}" ${s.key === cur ? "selected" : ""}>${esc(g.label)} / ${esc(s.label)}</option>`).join("")
+    ).join("");
+  });
+
+  document.getElementById("f-cancel").addEventListener("click", closeModal);
+  root.querySelector(".modal-overlay").addEventListener("click", e => { if (e.target === root.querySelector(".modal-overlay")) closeModal(); });
+
+  const delBtn = document.getElementById("f-delete");
+  if (delBtn) delBtn.addEventListener("click", () => {
+    if (confirm('Delete task "' + t.name + '"?')) {
+      state.tasks = state.tasks.filter(x => x.id !== t.id);
+      closeModal(); renderAll(); toast("Task deleted");
+    }
+  });
+
+  document.getElementById("f-save").addEventListener("click", () => {
+    const name = document.getElementById("f-name").value.trim();
+    if (!name) { toast("Name is required"); return; }
+    const listId = document.getElementById("f-list").value;
+    const status = document.getElementById("f-status").value;
+    const priority = document.getElementById("f-prio").value;
+    const startDate = document.getElementById("f-start").value || null;
+    const dueDate = document.getElementById("f-due").value || null;
+    const desc = document.getElementById("f-desc").value.trim();
+
+    if (startDate && dueDate && startDate > dueDate) { toast("Start date is after due date"); return; }
+
+    const now = new Date().toISOString();
+    if (t) {
+      t.name = name; t.description = desc; t.listId = listId; t.status = status;
+      t.priority = priority; t.startDate = startDate; t.dueDate = dueDate;
+      t.updatedAt = now;
+      if (isCompleted(t) && !t.completedAt) t.completedAt = now;
+      if (!isCompleted(t)) t.completedAt = null;
+      toast("Task updated");
+    } else {
+      state.tasks.push({
+        id: nextId(), listId, name, description: desc, status, priority,
+        startDate, dueDate, createdAt: now, updatedAt: now, completedAt: null
+      });
+      toast("Task added: " + name);
+    }
+    closeModal(); renderAll();
+  });
+
+  document.getElementById("f-name").focus();
+}
+
+function closeModal() {
+  const root = document.getElementById("modalRoot");
+  root.classList.add("hidden");
+  root.innerHTML = "";
+}
+
+/* ================= Events ================= */
+
+document.querySelectorAll(".view-tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    switchView(tab.dataset.view);
+  });
+});
+
+function switchView(view) {
+  document.querySelectorAll(".view-tab").forEach(t => t.classList.remove("active"));
+  const tab = document.querySelector(`.view-tab[data-view="${view}"]`);
+  if (tab) tab.classList.add("active");
+  currentView = view;
+  document.getElementById("kanban").classList.toggle("hidden", view !== "kanban");
+  document.getElementById("listView").classList.toggle("hidden", view !== "list");
+  document.getElementById("calView").classList.toggle("hidden", view !== "calendar");
+  if (view === "calendar") renderCalendar();
+  if (view === "list") renderList();
+  history.replaceState(null, "", "#" + view);
+}
+
+window.addEventListener("hashchange", () => {
+  const v = location.hash.replace("#", "");
+  if (["kanban", "list", "calendar"].includes(v)) switchView(v);
+});
+
+document.getElementById("listFilter").addEventListener("change", renderAll);
+document.getElementById("statusGroupFilter").addEventListener("change", renderList);
+document.getElementById("priorityFilter").addEventListener("change", renderList);
+document.getElementById("overdueFilter").addEventListener("change", renderList);
+
+document.querySelectorAll("#listTable th").forEach(th => {
+  th.addEventListener("click", () => {
+    const key = th.dataset.sort;
+    if (listSort.key === key) listSort.dir *= -1; else { listSort.key = key; listSort.dir = 1; }
+    document.querySelectorAll("#listTable th").forEach(h => h.textContent = h.textContent.replace(/ [↑↓]$/, ""));
+    th.textContent += (listSort.dir === 1 ? " ↑" : " ↓");
+    renderList();
+  });
+});
+
+document.getElementById("addBtn").addEventListener("click", () => openModal(null));
+document.getElementById("calPrev").addEventListener("click", () => { calCursor.setMonth(calCursor.getMonth() - 1); renderCalendar(); });
+document.getElementById("calNext").addEventListener("click", () => { calCursor.setMonth(calCursor.getMonth() + 1); renderCalendar(); });
+
+document.getElementById("exportBtn").addEventListener("click", () => {
+  download("tasks.json", serialize());
+  toast("tasks.json downloaded - commit it to save");
+});
+
+document.getElementById("copyBtn").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(serialize());
+    toast("tasks.json copied to clipboard");
+  } catch (e) {
+    toast("Copy failed - use Export instead");
+  }
+});
+
+document.getElementById("importBtn").addEventListener("click", () => document.getElementById("importFile").click());
+document.getElementById("importFile").addEventListener("change", e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      state = normalize(JSON.parse(reader.result));
+      renderAll();
+      toast("Imported " + file.name);
+    } catch (err) {
+      toast("Invalid JSON file");
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = "";
+});
+
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") closeModal();
+});
+
+/* ================= Esc ================= */
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+function escAttr(s) { return esc(s).replace(/\n/g, " "); }
+
+/* ================= Boot ================= */
+load();
+const initialView = location.hash.replace("#", "");
+if (["kanban", "list", "calendar"].includes(initialView)) switchView(initialView);
+</script>
+</body>
+</html>
