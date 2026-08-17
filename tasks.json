@@ -817,14 +817,14 @@
       "id": "T-0009",
       "listId": "finances",
       "name": "Follow up RCBC access (4,508.41)",
-      "description": "RCBC temporarily inaccessible. Jar account NEC. Follow up to restore access.",
+      "description": "RCBC temporarily inaccessible. Jar account NEC. Follow up to restore access. RESOLVED: access restored Aug 11, 2026 (Edge-confirmed via Monica, AUDIT-LOG line 407); balance unchanged at 4,508.41 at restoration; RCBC actively used since (Aug 14 DeepSeek top-ups, 2,000 cash withdrawal). Ledger current RCBC balance 1,102.54.",
       "startDate": "2026-08-17",
       "dueDate": "2026-08-21",
-      "status": "inprogress",
+      "status": "complete",
       "priority": "imp-noturgent",
       "createdAt": "2026-08-17T11:15:00+08:00",
-      "updatedAt": "2026-08-17T11:15:00+08:00",
-      "completedAt": null,
+      "updatedAt": "2026-08-17T09:35:43.190Z",
+      "completedAt": "2026-08-17T09:35:43.190Z",
       "assignee": "finna"
     },
     {
