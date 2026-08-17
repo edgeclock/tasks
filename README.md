@@ -37,6 +37,17 @@ Each task: `id`, `listId`, `name`, `description`, `startDate`, `dueDate`, `statu
 - Monica is the single writer: she pulls, edits, validates, commits, and pushes (same protocol as the Finances ledger).
 - Import lets you restore from a downloaded file.
 
+## Start Now trigger (v0.2)
+
+Each task card / row / modal has a "▶ Start" button. Clicking it launches the task's agent in OpenClaw with full task context (per the [agent] tag in the task name), using a local bridge:
+
+- Bridge: `D:\Personal\Tasks\tools\trigger-bridge.mjs` (Node, localhost:8788, zero deps).
+- Auto-start at logon: `tools/start-bridge.ps1` + Startup folder entry (DoneTriggerBridge.vbs).
+- The launched agent gets the task details and instructions to do the work, update tasks.json (validate + push), and reply with a summary (delivered to Telegram + webchat).
+- Session key per task: `agent:<id>:done-<taskId>` so repeat launches resume the same session.
+- Bridge health indicator in the app header; buttons disable when bridge is offline.
+- CSRF guard: bridge only accepts POSTs from allowed origins (edgeclock.github.io, localhost).
+
 ## Writing protocol (Monica)
 
 1. `git -C "D:\Personal\Tasks" pull --ff-only`
