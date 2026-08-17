@@ -1050,6 +1050,20 @@
       "updatedAt": "2026-08-17T23:35:00+08:00",
       "completedAt": null,
       "assignee": "edge"
+    },
+    {
+      "id": "T-0026",
+      "listId": "ideas",
+      "name": "Idea: Beyblade Challenge game app",
+      "description": "Idea from Edge (2026-08-17), draft, no dates. Game app where Beyblade players locate each other; Pokemon Fire Red / Leaf Green framing (meet wild trainers out in the world). Features: (1) challenge other players by message + set location, or go to where they usually are and challenge there; (2) rankings, win/loss, stats; (3) leaderboards worldwide/country/region/more; (4) periodic events; (5) gym leaders per town/area who open their gym weekly at a set date. Plan: D:\\Personal\\Geila\\plans\\2026-08-17-beyblade-challenge.html. Next action: none yet; when ready, define first playable version (smallest useful pilot).",
+      "startDate": null,
+      "dueDate": null,
+      "status": "todo",
+      "priority": "notimp-noturgent",
+      "createdAt": "2026-08-17T23:45:00+08:00",
+      "updatedAt": "2026-08-17T23:45:00+08:00",
+      "completedAt": null,
+      "assignee": "edge"
     }
   ]
 }
