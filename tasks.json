@@ -1064,6 +1064,20 @@
       "updatedAt": "2026-08-17T23:45:00+08:00",
       "completedAt": null,
       "assignee": "edge"
+    },
+    {
+      "id": "T-0027",
+      "listId": "personal",
+      "name": "Buy Strepsils",
+      "description": "Throat lozenges - noted by Edge Aug 22 01:49",
+      "startDate": null,
+      "dueDate": null,
+      "status": "todo",
+      "priority": "imp-noturgent",
+      "assignee": "edge",
+      "createdAt": "2026-08-22T01:49:00+08:00",
+      "updatedAt": "2026-08-22T01:49:00+08:00",
+      "completedAt": null
     }
   ]
 }
